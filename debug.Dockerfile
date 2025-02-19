@@ -33,5 +33,5 @@ WORKDIR /
 RUN ln -s /workspace/bin/spiffe-helper /spiffe-helper
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
 EXPOSE 40000
-ENTRYPOINT ["/go/bin/dlv", "--listen=:4000", "--headless=true", "--log=true", "--accept-multiclient", "--api-version=2", "exec", "/spiffe-helper", "--"]
+ENTRYPOINT ["/go/bin/dlv", "--listen=:4000", "--headless=true", "--accept-multiclient", "--api-version=2", "exec", "/spiffe-helper", "--"]
 CMD []
