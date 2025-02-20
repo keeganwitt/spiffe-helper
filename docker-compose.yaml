@@ -5,6 +5,7 @@ services:
     platform: linux/amd64
     volumes:
       - ./integrationTest/conf/server:/opt/spire/conf/server:r
+      - server-socket:/tmp/spire-server/private:rw
     command: ["-config", "/opt/spire/conf/server/server.conf"]
     privileged: true
     healthcheck:
@@ -38,10 +39,18 @@ services:
         condition: service_healthy
     entrypoint: ["/opt/spire/bin/spire-server"]
     command:
-      - entry create
-      - -selector docker:label:com.docker.compose.service:spiffe-helper
-      - -spiffeID spiffe://example.org/workload/spiffe-helper
-      - -parentID spiffe://example.org/spire/agent/x509pop/02b8e7713492fdf93d43369e9c6f50d28bef9fa8
+      - entry
+      - create
+      - -socketPath
+      - /tmp/spire-server/private/api.sock
+      - -selector
+      - docker:label:com.docker.compose.service:spire-workload
+      - -spiffeID
+      - spiffe://example.org/workload/spire-workload
+      - -parentID
+      - spiffe://example.org/spire/agent/x509pop/02b8e7713492fdf93d43369e9c6f50d28bef9fa8
+    volumes:
+      - server-socket:/tmp/spire-server/private:r
   spiffe-helper:
     hostname: spiffe-helper
     build:
@@ -64,3 +73,4 @@ services:
 
 volumes:
   agent-socket:
+  server-socket:
