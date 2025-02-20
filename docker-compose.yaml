@@ -53,7 +53,7 @@ services:
       spire-agent:
         condition: service_healthy
       create-entries:
-        condition: service_completed_successfully
+        condition: service_started
     volumes:
       - ./integrationTest/conf/spiffe-helper:/etc/spiffe-helper:r
       - agent-socket:/opt/spire/sockets:r
