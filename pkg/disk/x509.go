@@ -1,6 +1,7 @@
 package disk
 
 import (
+	"bytes"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
@@ -71,16 +72,18 @@ func WriteX509Context(x509Context *workloadapi.X509Context, addIntermediatesToBu
 // writeCerts takes an array of certificates,
 // and encodes them as PEM blocks, writing them to file
 func writeCerts(file string, certs []*x509.Certificate, certFileMode fs.FileMode) error {
-	var pemData []byte
+	var buf bytes.Buffer
 	for _, cert := range certs {
 		b := &pem.Block{
 			Type:  "CERTIFICATE",
 			Bytes: cert.Raw,
 		}
-		pemData = append(pemData, pem.EncodeToMemory(b)...)
+		if err := pem.Encode(&buf, b); err != nil {
+			return fmt.Errorf("failed to encode certificate: %w", err)
+		}
 	}
 
-	return os.WriteFile(file, pemData, certFileMode)
+	return os.WriteFile(file, buf.Bytes(), certFileMode)
 }
 
 // writeKey takes a private key as a slice of bytes,
