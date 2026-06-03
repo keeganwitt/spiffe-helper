@@ -49,9 +49,10 @@ func WriteX509Context(x509Context *workloadapi.X509Context, addIntermediatesToBu
 
 	// If using federated domains, add them to the CA bundle
 	if includeFederatedDomains {
+		svidTrustDomain := svid.ID.TrustDomain().Name()
 		for _, bundle := range x509Context.Bundles.Bundles() {
 			// The bundle corresponding to svid.ID.TrustDomain is already stored
-			if bundle.TrustDomain().Name() != svid.ID.TrustDomain().Name() {
+			if bundle.TrustDomain().Name() != svidTrustDomain {
 				bundles = append(bundles, bundle.X509Authorities()...)
 			}
 		}
