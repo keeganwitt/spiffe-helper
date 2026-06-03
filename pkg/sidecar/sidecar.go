@@ -375,8 +375,9 @@ func (s *Sidecar) fetchJWTSVIDs(ctx context.Context, jwtAudience string, jwtExtr
 		s.config.Log.Errorf("Unable to fetch JWT SVID: %v", err)
 		return nil, err
 	}
+	jwtAudiences := []string{jwtAudience}
 	for _, jwtSVID := range jwtSVIDs {
-		_, err = jwtsvid.ParseAndValidate(jwtSVID.Marshal(), s.jwtSource, []string{jwtAudience})
+		_, err = jwtsvid.ParseAndValidate(jwtSVID.Marshal(), s.jwtSource, jwtAudiences)
 		if err != nil {
 			s.config.Log.Errorf("Unable to parse or validate token: %v", err)
 			return nil, err
