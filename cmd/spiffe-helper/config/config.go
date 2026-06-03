@@ -296,9 +296,11 @@ func isFlagPassed(name string) bool {
 
 // mapKeysToString returns a comma separated string with all the keys from a map
 func mapKeysToString[V any](myMap map[string]V) string {
-	keys := make([]string, 0, len(myMap))
+	keys := make([]string, len(myMap))
+	i := 0
 	for key := range myMap {
-		keys = append(keys, key)
+		keys[i] = key
+		i++
 	}
 
 	slices.Sort(keys)
