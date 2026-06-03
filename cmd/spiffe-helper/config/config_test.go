@@ -382,20 +382,93 @@ func TestNewSidecarConfig(t *testing.T) {
 	assert.Empty(t, sidecarConfig.RenewSignal)
 }
 
-func TestDaemonModeFlag(t *testing.T) {
-	config := &Config{
-		SVIDFilename:       "cert.pem",
-		SVIDKeyFilename:    "key.pem",
-		SVIDBundleFilename: "bundle.pem",
+func TestParseConfigFlagOverrides(t *testing.T) {
+	boolPtr := func(b bool) *bool { return &b }
+
+	for _, tt := range []struct {
+		name                 string
+		initialDaemonMode    *bool
+		flagPassed           bool
+		daemonModeFlagValue  bool
+		expectedDaemonMode   bool
+	}{
+		{
+			name:                 "Flag passed as false overrides config nil",
+			initialDaemonMode:    nil,
+			flagPassed:           true,
+			daemonModeFlagValue:  false,
+			expectedDaemonMode:   false,
+		},
+		{
+			name:                 "Flag passed as true overrides config nil",
+			initialDaemonMode:    nil,
+			flagPassed:           true,
+			daemonModeFlagValue:  true,
+			expectedDaemonMode:   true,
+		},
+		{
+			name:                 "Flag passed as false overrides config true",
+			initialDaemonMode:    boolPtr(true),
+			flagPassed:           true,
+			daemonModeFlagValue:  false,
+			expectedDaemonMode:   false,
+		},
+		{
+			name:                 "Flag passed as true overrides config false",
+			initialDaemonMode:    boolPtr(false),
+			flagPassed:           true,
+			daemonModeFlagValue:  true,
+			expectedDaemonMode:   true,
+		},
+		{
+			name:                 "Flag not passed defaults config nil to true",
+			initialDaemonMode:    nil,
+			flagPassed:           false,
+			daemonModeFlagValue:  false, // value shouldn't matter
+			expectedDaemonMode:   true,
+		},
+		{
+			name:                 "Flag not passed retains config true",
+			initialDaemonMode:    boolPtr(true),
+			flagPassed:           false,
+			daemonModeFlagValue:  false, // value shouldn't matter
+			expectedDaemonMode:   true,
+		},
+		{
+			name:                 "Flag not passed retains config false",
+			initialDaemonMode:    boolPtr(false),
+			flagPassed:           false,
+			daemonModeFlagValue:  false, // value shouldn't matter
+			expectedDaemonMode:   false,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			// Save and restore global flag state
+			oldCommandLine := flag.CommandLine
+			defer func() { flag.CommandLine = oldCommandLine }()
+
+			// Reset global flags for the test
+			flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+			daemonModeFlag := flag.Bool(daemonModeFlagName, true, "Toggle running as a daemon to rotate X.509/JWT or just fetch and exit")
+
+			// Simulate flag being passed or not
+			if tt.flagPassed {
+				// flag.Set simulates parsing an actual flag from command line
+				err := flag.Set(daemonModeFlagName, "false") // setting to any valid value marks it as passed
+				if tt.daemonModeFlagValue {
+					err = flag.Set(daemonModeFlagName, "true")
+				}
+				require.NoError(t, err)
+			}
+
+			config := &Config{
+				DaemonMode: tt.initialDaemonMode,
+			}
+
+			config.ParseConfigFlagOverrides(*daemonModeFlag, daemonModeFlagName)
+
+			require.NotNil(t, config.DaemonMode)
+			assert.Equal(t, tt.expectedDaemonMode, *config.DaemonMode)
+		})
 	}
-
-	daemonModeFlag := flag.Bool(daemonModeFlagName, true, "Toggle running as a daemon to rotate X.509/JWT or just fetch and exit")
-	flag.Parse()
-
-	err := flag.Set(daemonModeFlagName, "false")
-	require.NoError(t, err)
-
-	config.ParseConfigFlagOverrides(*daemonModeFlag, daemonModeFlagName)
-	require.NotNil(t, config.DaemonMode)
-	assert.False(t, *config.DaemonMode)
 }
